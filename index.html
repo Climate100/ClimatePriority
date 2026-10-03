@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Climate Priorities Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F1F4F2;
+    --panel:#FFFFFF;
+    --panel-2:#E8EEEB;
+    --ink:#12221F;
+    --muted:#55696A;
+    --muted-2:#7A8D8D;
+    --line:#D5DEDA;
+    --accent:#0C6B66;
+    --accent-soft:#D6ECE8;
+    --critical:#B03A3A;
+    --critical-soft:#F5DEDC;
+    --high:#A8690F;
+    --high-soft:#F6E6C9;
+    --rising:#2A63A8;
+    --rising-soft:#DCE8F6;
+    --good:#2B7A4B;
+    --good-soft:#D9EEE0;
+    --link:#0C6B66;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top, 0px);
+    padding-bottom:env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0E1A18; --panel:#152624; --panel-2:#1B302D; --ink:#E7EFEC; --muted:#9CB2AD; --muted-2:#748C87;
+      --line:#28413D; --accent:#4CC4B5; --accent-soft:#17403C;
+      --critical:#EE8B86; --critical-soft:#432624; --high:#E9B767; --high-soft:#42351A;
+      --rising:#86B4EE; --rising-soft:#1B3350; --good:#7FD3A0; --good-soft:#1B3B2A; --link:#4CC4B5;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0E1A18; --panel:#152624; --panel-2:#1B302D; --ink:#E7EFEC; --muted:#9CB2AD; --muted-2:#748C87;
+    --line:#28413D; --accent:#4CC4B5; --accent-soft:#17403C;
+    --critical:#EE8B86; --critical-soft:#432624; --high:#E9B767; --high-soft:#42351A;
+    --rising:#86B4EE; --rising-soft:#1B3350; --good:#7FD3A0; --good-soft:#1B3B2A; --link:#4CC4B5;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-padding-top:env(safe-area-inset-top, 0px);}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:'Source Sans 3', system-ui, sans-serif; font-size:16px; line-height:1.5; -webkit-font-smoothing:antialiased;}
+  a{color:var(--link);}
+  h1,h2,h3{font-family:'Bricolage Grotesque', system-ui, sans-serif; margin:0; letter-spacing:-0.01em;}
+  button,select,input{font-family:inherit;}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+  /* ---- Hero ---- */
+  .hero{padding:34px 28px 26px; border-bottom:1px solid var(--line); max-width:1320px; margin:0 auto;}
+  .hero-top{display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); gap:36px; align-items:end;}
+  .hero h1{font-size:clamp(30px,4.4vw,48px); font-weight:700; line-height:1.04;}
+  .hero .lede{margin:12px 0 0; color:var(--muted); font-size:16.5px; max-width:54ch;}
+  .warm{position:relative; padding:62px 0 66px; min-width:0;}
+  .warm-title{position:absolute; top:0; left:0; font-size:13.5px; color:var(--muted); font-weight:600;}
+  .warm-track{position:relative; height:10px; border-radius:6px; background:linear-gradient(90deg,#3C9A8F 0%,#D7B24A 55%,#C4463C 100%);}
+  .warm-band{position:absolute; top:-6px; height:22px; border:2px solid var(--ink); border-radius:5px; background:rgba(255,255,255,0.18);}
+  .warm-dot{position:absolute; top:-4px; width:18px; height:18px; margin-left:-9px; border-radius:50%; background:var(--panel); border:3px solid var(--ink);}
+  .warm-label{position:absolute; font-size:12.5px; line-height:1.25; color:var(--ink); transform:translateX(-50%); text-align:center; width:104px;}
+  .warm-label b{display:block; font-family:'Bricolage Grotesque',sans-serif; font-size:15px;}
+  .warm-label.above{bottom:calc(100% + 12px);}
+  .warm-label.below{top:calc(100% + 12px);}
+  .warm-wrap{position:relative;}
+  .kpis{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:0; margin-top:24px; border-top:1px solid var(--line);}
+  .kpi{padding:16px 18px 4px 0;}
+  .kpi + .kpi{padding-left:18px; border-left:1px solid var(--line);}
+  .kpi .n{font-family:'Bricolage Grotesque',sans-serif; font-size:28px; font-weight:700; color:var(--accent); line-height:1.1;}
+  .kpi .l{font-size:13.5px; color:var(--muted); margin-top:4px; max-width:24ch;}
+
+  /* ---- Filters ---- */
+  .filterbar{position:sticky; top:env(safe-area-inset-top, 0px); z-index:30; background:var(--bg); border-bottom:1px solid var(--line);}
+  .filterbar-inner{max-width:1320px; margin:0 auto; padding:12px 28px; display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end;}
+  .fgroup{display:flex; flex-direction:column; gap:4px;}
+  .fgroup label{font-size:12.5px; color:var(--muted); font-weight:600;}
+  .fgroup select,.fgroup input{background:var(--panel); color:var(--ink); border:1px solid var(--line); border-radius:6px; padding:8px 10px; font-size:14.5px; min-width:150px; max-width:100%;}
+  .fgroup input{min-width:210px;}
+  .clearbtn{background:transparent; color:var(--muted); border:1px solid var(--line); border-radius:6px; padding:8px 12px; font-size:14px; cursor:pointer;}
+  .clearbtn:hover{color:var(--ink); border-color:var(--accent);}
+  .count{margin-left:auto; font-size:14px; color:var(--muted); padding-bottom:8px;}
+  .count strong{color:var(--ink);}
+
+  nav.tabs{max-width:1320px; margin:0 auto; padding:0 28px; display:flex; gap:4px; overflow-x:auto; border-bottom:1px solid var(--line);}
+  .tab{background:none; border:none; color:var(--muted); font-family:'Bricolage Grotesque',sans-serif; font-weight:600; font-size:16.5px; padding:14px 14px 12px; cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap;}
+  .tab:hover{color:var(--ink);}
+  .tab[aria-selected="true"]{color:var(--ink); border-bottom-color:var(--accent);}
+
+  main{max-width:1320px; margin:0 auto; padding:26px 28px 70px;}
+  .panel{display:none;} .panel.active{display:block;}
+  .intro{max-width:74ch; margin-bottom:22px;}
+  .intro h2{font-size:23px; font-weight:600; margin-bottom:6px;}
+  .intro p{margin:0; color:var(--muted);}
+  .empty{padding:44px 12px; color:var(--muted); text-align:center;}
+
+  /* ---- Priorities: rows with urgency bar ---- */
+  .rows{display:flex; flex-direction:column; gap:12px;}
+  .prow{display:grid; grid-template-columns:6px minmax(0,1fr); background:var(--panel); border:1px solid var(--line); border-radius:6px; overflow:hidden;}
+  .prow .bar{background:var(--muted-2);}
+  .prow.Critical .bar{background:var(--critical);} .prow.High .bar{background:var(--high);} .prow.Rising .bar{background:var(--rising);}
+  .prow .body{padding:16px 20px 14px; display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:6px 30px;}
+  .prow h3{font-size:19px; font-weight:600;}
+  .prow .head{grid-column:1/-1; display:flex; flex-wrap:wrap; gap:8px 10px; align-items:center; margin-bottom:2px;}
+  .pill{font-size:12.5px; font-weight:600; padding:2px 9px; border-radius:20px; background:var(--panel-2); color:var(--muted);}
+  .pill.Critical{background:var(--critical-soft); color:var(--critical);}
+  .pill.High{background:var(--high-soft); color:var(--high);}
+  .pill.Rising{background:var(--rising-soft); color:var(--rising);}
+  .pill.Scaling,.pill.ontrack,.pill.done{background:var(--good-soft); color:var(--good);}
+  .pill.Emerging,.pill.upcoming{background:var(--rising-soft); color:var(--rising);}
+  .pill.Lagging,.pill.offtrack{background:var(--critical-soft); color:var(--critical);}
+  .pill.theme{background:var(--accent-soft); color:var(--accent);}
+  .prow .standing{margin:0; font-size:15.5px;}
+  .prow .side{font-size:14.5px; color:var(--muted);}
+  .prow .side b{color:var(--ink); font-weight:600;}
+  .prow .side p{margin:0 0 8px;}
+  .tags{display:flex; flex-wrap:wrap; gap:5px; margin-top:6px;}
+  .tag{font-size:13px; padding:2px 8px; border:1px solid var(--line); border-radius:4px; color:var(--muted); background:var(--bg);}
+  .tag.hit{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .tag.sol{border-color:var(--accent-soft); background:var(--accent-soft); color:var(--accent);}
+  .srcs{grid-column:1/-1; font-size:13.5px; color:var(--muted); padding-top:8px; margin-top:6px; border-top:1px solid var(--line);}
+  .srcs a{margin-right:12px; white-space:nowrap;}
+
+  /* ---- Countries ---- */
+  .cgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:14px;}
+  .ccard{background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:18px 18px 14px; display:flex; flex-direction:column; gap:10px;}
+  .ccard .top{display:flex; justify-content:space-between; gap:10px; align-items:flex-start;}
+  .ccard h3{font-size:20px; font-weight:600; line-height:1.15;}
+  .ccard .reg{font-size:13.5px; color:var(--muted-2);}
+  .targets{display:grid; grid-template-columns:1.5fr 1fr; gap:14px; padding:10px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line);}
+  .targets .v{font-family:'Bricolage Grotesque',sans-serif; font-size:19px; font-weight:600; line-height:1.15;}
+  .targets .k{font-size:12.5px; color:var(--muted); margin-top:3px;}
+  .ccard ul{margin:0; padding-left:18px; font-size:14.5px;}
+  .ccard li{margin-bottom:3px;}
+  .ccard .note{font-size:14px; color:var(--muted); margin:0;}
+  .ccard .srcs{margin-top:auto;}
+
+  /* ---- Solutions board ---- */
+  .board{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; align-items:start;}
+  .col{background:var(--panel-2); border-radius:6px; padding:14px;}
+  .col > h3{font-size:17px; font-weight:600; margin-bottom:2px;}
+  .col > .sub{font-size:13.5px; color:var(--muted); margin:0 0 12px;}
+  .col.Scaling{border-top:4px solid var(--good);} .col.Emerging{border-top:4px solid var(--rising);} .col.Lagging{border-top:4px solid var(--critical);}
+  .scard{background:var(--panel); border:1px solid var(--line); border-radius:5px; padding:12px 14px; margin-bottom:10px;}
+  .scard h4{font-family:'Bricolage Grotesque',sans-serif; font-size:16px; font-weight:600; margin:0 0 4px;}
+  .scard p{margin:0; font-size:14.5px;}
+  .scard .srcs{margin-top:8px; padding-top:6px;}
+  .col .none{font-size:14px; color:var(--muted); padding:8px 2px;}
+
+  /* ---- Milestones ---- */
+  .timeline{position:relative; margin:0; padding:0; list-style:none;}
+  .timeline::before{content:""; position:absolute; left:132px; top:6px; bottom:6px; width:2px; background:var(--line);}
+  .mrow{display:grid; grid-template-columns:120px minmax(0,1fr); gap:26px; padding:0 0 22px; position:relative;}
+  .mrow .date{text-align:right; font-family:'Bricolage Grotesque',sans-serif; font-weight:600; font-size:15.5px; padding-top:1px;}
+  .mrow .date span{display:block; font-family:'Source Sans 3',sans-serif; font-weight:400; font-size:13px; color:var(--muted);}
+  .mrow::after{content:""; position:absolute; left:126px; top:6px; width:14px; height:14px; border-radius:50%; background:var(--accent); border:3px solid var(--bg);}
+  .mrow.upcoming::after{background:var(--bg); border:3px solid var(--rising);}
+  .mrow h3{font-size:18px; font-weight:600; margin-bottom:4px;}
+  .mrow p{margin:0 0 6px; font-size:15.5px; max-width:78ch;}
+  .mrow .head{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:4px;}
+
+  /* ---- Sources ---- */
+  .sgroups{display:grid; grid-template-columns:repeat(auto-fit,minmax(330px,1fr)); gap:26px 34px;}
+  .sgroup h3{font-size:18px; font-weight:600; margin-bottom:8px; color:var(--accent);}
+  .sitem{padding:10px 0; border-top:1px solid var(--line);}
+  .sitem b{display:block; font-weight:600;}
+  .sitem span{display:block; font-size:14.5px; color:var(--muted);}
+  .sitem a{font-size:13.5px; word-break:break-all;}
+
+  footer{max-width:1320px; margin:0 auto; padding:22px 28px 40px; border-top:1px solid var(--line); color:var(--muted); font-size:13.5px;}
+
+  @media (max-width:900px){
+    .hero-top{grid-template-columns:1fr; gap:6px;}
+    .board{grid-template-columns:1fr;}
+    .prow .body{grid-template-columns:1fr;}
+    .kpis{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .kpi:nth-child(3){padding-left:0; border-left:none;}
+  }
+  @media (max-width:640px){
+    .hero,.filterbar-inner,nav.tabs,main,footer{padding-left:16px; padding-right:16px;}
+    .timeline::before{left:8px;}
+    .mrow{grid-template-columns:1fr; padding-left:30px; gap:2px;}
+    .mrow::after{left:2px;}
+    .mrow .date{text-align:left;}
+    .fgroup select,.fgroup input{min-width:130px;}
+    .count{margin-left:0; width:100%;}
+  }
+  @media (prefers-reduced-motion: reduce){*{scroll-behavior:auto !important;}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-top">
+    <div>
+      <h1>Climate Priorities Dashboard</h1>
+      <p class="lede">What the world has committed to on climate, where delivery is falling short, and which solutions are scaling. Filter by region, country and theme.</p>
+    </div>
+    <div class="warm-wrap" aria-label="Projected warming by 2100 under different scenarios">
+      <div class="warm">
+        <div class="warm-title">Projected warming by 2100</div>
+        <div class="warm-track" id="warm-track"></div>
+      </div>
+    </div>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><div class="n">57.7 Gt</div><div class="l">CO2-equivalent emitted in 2024, up 2.3% on 2023</div></div>
+    <div class="kpi"><div class="n">55%</div><div class="l">cut below 2019 needed by 2035 for a 1.5°C pathway</div></div>
+    <div class="kpi"><div class="n">12–15%</div><div class="l">cut below 2019 by 2035 if all NDCs are delivered</div></div>
+    <div class="kpi"><div class="n">108</div><div class="l">countries had submitted new NDCs by 9 Nov 2025, covering 71% of emissions</div></div>
+  </div>
+</header>
+
+<div class="filterbar">
+  <div class="filterbar-inner">
+    <div class="fgroup"><label for="f-search">Search</label><input type="search" id="f-search" placeholder="Search a topic or country"></div>
+    <div class="fgroup"><label for="f-region">Region</label><select id="f-region"><option value="">All regions</option></select></div>
+    <div class="fgroup"><label for="f-country">Country</label><select id="f-country"><option value="">All countries</option></select></div>
+    <div class="fgroup"><label for="f-theme">Theme</label><select id="f-theme"><option value="">All themes</option></select></div>
+    <div class="fgroup" id="level-group"><label for="f-level" id="level-label">Urgency</label><select id="f-level"><option value="">Any</option></select></div>
+    <button class="clearbtn" id="clear">Clear filters</button>
+    <div class="count" id="count" aria-live="polite"></div>
+  </div>
+</div>
+
+<nav class="tabs" role="tablist">
+  <button class="tab" role="tab" aria-selected="true" data-tab="priorities">Priorities</button>
+  <button class="tab" role="tab" aria-selected="false" data-tab="countries">Country plans</button>
+  <button class="tab" role="tab" aria-selected="false" data-tab="solutions">Solutions</button>
+  <button class="tab" role="tab" aria-selected="false" data-tab="milestones">Milestones</button>
+  <button class="tab" role="tab" aria-selected="false" data-tab="sources">Sources &amp; Links</button>
+</nav>
+
+<main>
+  <section class="panel active" id="panel-priorities">
+    <div class="intro"><h2>Global climate priorities</h2><p>The issues that decide whether the Paris Agreement goals stay in reach. Each is rated by urgency, based on the gap between commitments and delivery, and lists the solutions that address it.</p></div>
+    <div class="rows" id="priorities-list"></div>
+    <p class="empty" id="priorities-empty" hidden>No priorities match these filters. Try clearing one.</p>
+  </section>
+
+  <section class="panel" id="panel-countries">
+    <div class="intro"><h2>Country plans</h2><p>Headline 2035 targets and the priorities each country has put in its national climate plan (NDC), with an independent read on whether it is on track for 2030.</p></div>
+    <div class="cgrid" id="countries-grid"></div>
+    <p class="empty" id="countries-empty" hidden>No countries match these filters. Try clearing one.</p>
+  </section>
+
+  <section class="panel" id="panel-solutions">
+    <div class="intro"><h2>Solutions</h2><p>Climate solutions grouped by how far they have scaled: proven and growing, emerging, or lagging behind their potential.</p></div>
+    <div class="board" id="solutions-board"></div>
+  </section>
+
+  <section class="panel" id="panel-milestones">
+    <div class="intro"><h2>Milestones and decisions</h2><p>The agreements and events that set today's priorities, from the Paris Agreement to COP31 in November 2026.</p></div>
+    <ol class="timeline" id="milestones-list"></ol>
+    <p class="empty" id="milestones-empty" hidden>No milestones match these filters. Try clearing one.</p>
+  </section>
+
+  <section class="panel" id="panel-sources">
+    <div class="intro"><h2>Sources &amp; links</h2><p>Every figure on this dashboard traces to one of these sources. Open a link for the underlying data or analysis.</p></div>
+    <div class="sgroups" id="sources-groups"></div>
+  </section>
+</main>
+
+<footer>Compiled from the public sources listed in the Sources &amp; Links tab, current as of 28 September 2026. Targets and projections are revised often, so check the linked source before relying on a number. This dashboard is a reference aid and not professional advice.</footer>
+
+<script>
+/* ================= SOURCES ================= */
+const SRC = {
+  unep:{n:"UNEP Emissions Gap Report 2025", u:"https://www.unep.org/resources/emissions-gap-report-2025", d:"Warming projections, NDC gap and implementation gap."},
+  unepPR:{n:"UNEP press release on new pledges", u:"https://www.unep.org/news-and-stories/press-release/new-climate-pledges-only-slightly-lower-dangerous-global-warming", d:"Summary findings, overshoot and carbon removal."},
+  cbUnep:{n:"Carbon Brief on the UNEP gap report", u:"https://www.carbonbrief.org/unep-new-country-climate-plans-barely-move-needle-on-expected-warming", d:"Analysis of NDC and implementation gaps."},
+  wriNdc:{n:"WRI: Assessing 2025 NDCs", u:"https://www.wri.org/insights/assessing-2025-ndcs", d:"Country-by-country comparison of new national climate plans."},
+  cw:{n:"Climate Watch NDC Tracker", u:"https://www.climatewatchdata.org/ndc-tracker", d:"Live tracker of submitted NDCs."},
+  wriBtr:{n:"WRI: G20 climate progress reports", u:"https://www.wri.org/insights/g20-climate-progress-reports-BTR-analysis", d:"First G20 climate progress reports (June 2026)."},
+  nci:{n:"NewClimate Institute: major emitters progress", u:"https://newclimate.org/resources/publications/progress-of-major-emitters-towards-climate-targets-2025-update", d:"Which countries are on or off track for 2030 targets."},
+  catChina:{n:"Climate Action Tracker: China 2035 NDC", u:"https://climateactiontracker.org/countries/china/2035-ndc/", d:"Assessment of China's 2035 target and policies."},
+  cbCop30:{n:"Carbon Brief: COP30 key outcomes", u:"https://www.carbonbrief.org/cop30-key-outcomes-agreed-at-the-un-climate-talks-in-belem", d:"Detailed outcomes of the Belém summit."},
+  cbLand:{n:"Carbon Brief: COP30 food, forests, land", u:"https://www.carbonbrief.org/cop30-key-outcomes-for-food-forests-land-and-nature-at-the-un-climate-talks-in-belem", d:"Deforestation and land outcomes."},
+  iisd:{n:"IISD: COP30 outcome", u:"https://www.iisd.org/articles/insight/cop-30-outcome-what-it-means-and-whats-next", d:"What COP30 decided and what comes next."},
+  wriCop30:{n:"WRI: COP30 outcomes", u:"https://www.wri.org/insights/cop30-outcomes-next-steps", d:"Adaptation, trade and Indigenous rights outcomes."},
+  cop30:{n:"COP30 Presidency: landmark outcomes", u:"https://cop30.br/en/news-about-cop30/cop30-landmark-outcomes-emerge-from-negotiations-despite-unprecedented-geopolitical-tensions", d:"Presidency summary of the Mutirão decisions."},
+  ec:{n:"European Commission: What did COP30 achieve?", u:"https://climate.ec.europa.eu/news-other-reads/news/what-did-cop30-achieve-2025-12-01_en", d:"Adaptation indicators, just transition plan, COP28 pledges."},
+  gw:{n:"Germanwatch: COP30 review", u:"https://www.germanwatch.org/en/blog/energetic-start-outcome-major-gaps-looking-back-cop30-belem", d:"Critical assessment of adaptation and fossil fuel outcomes."},
+  santa:{n:"Geneva Environment Network: Santa Marta conference", u:"https://www.genevaenvironmentnetwork.org/resources/updates/climate-action-from-geneva-to-santa-marta-first-conference-on-transitioning-away-from-fossil-fuels/", d:"Dates and context for the fossil fuel transition conference."},
+  chn:{n:"Climate Home News: COP31 and Santa Marta", u:"https://www.climatechangenews.com/2026/06/24/ministers-say-cop31-open-to-reflecting-santa-marta-conference-climate-talks/", d:"COP31 presidency and Santa Marta follow-up."},
+  ecco:{n:"ECCO: From Bonn to Antalya", u:"https://eccoclimate.org/en/from-bonn-and-london-to-antalya-are-climate-talks-moving-cop31-closer-to-delivery/", d:"Türkiye's COP31 Action Agenda and the road to Antalya."},
+  et:{n:"EnergyTransition.org: Santa Marta to COP31", u:"https://energytransition.org/2026/07/can-santa-martas-fossil-fuel-phaseout-momentum-survive-the-road-to-cop31/", d:"Momentum for a fossil fuel phase-out after Santa Marta."},
+  road:{n:"COP30: Baku to Belém Roadmap to 1.3T", u:"https://cop30.br/en/2026-priorities/baku-to-belem-to-1-3t-roadmap", d:"The 5Rs framework and 2026 implementation work."},
+  cpi:{n:"CPI: Global Landscape of Climate Finance 2026", u:"https://www.climatepolicyinitiative.org/wp-content/uploads/2026/06/Global-Landscape-of-Climate-Finance-2026.pdf", d:"Sector split of climate finance, household investment, adaptation plateau."},
+  asset:{n:"The Asset: COP29 finance deal", u:"https://w1.theasset.com/article-esg/52952/cop29-strikes-next-decade-climate-finance-deal", d:"NCQG needs estimates for mitigation and adaptation."},
+  unfccc29:{n:"UNFCCC: COP29", u:"https://unfccc.int/cop29", d:"Official page for the new climate finance goal."},
+  paris:{n:"UNFCCC: The Paris Agreement", u:"https://unfccc.int/process-and-meetings/the-paris-agreement", d:"Treaty text and goals."},
+  ld:{n:"UNFCCC: Loss and Damage Fund", u:"https://unfccc.int/loss-and-damage-fund-and-funding-arrangements", d:"Fund governance and arrangements."},
+  undp:{n:"UNDP Climate Promise: climate finance", u:"https://climatepromise.undp.org/what-we-do/areas-of-work/climate-finance", d:"Country support and de-risking approaches for adaptation."},
+  habitat:{n:"UN-Habitat: urban content in NDC 3.0", u:"https://unhabitat.org/urban-content-in-ndc-30-a-global-snapshot-for-cop30", d:"How cities feature in new national plans."},
+  champ:{n:"WRI: CHAMP for Climate Action", u:"https://www.wri.org/initiatives/coalition-high-ambition-multilevel-partnerships-champ-climate-action", d:"Coalition on multilevel climate partnerships."},
+  bmj:{n:"BMJ: NDC ambition and health", u:"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7618446/", d:"Non-CO2 gases and NDC recommendations."}
+};
+const SRC_GROUPS = [
+  {t:"Emissions, targets and national plans", k:["unep","unepPR","cbUnep","wriNdc","cw","nci","catChina","wriBtr","bmj"]},
+  {t:"COP30 outcomes and analysis", k:["cbCop30","cbLand","iisd","wriCop30","cop30","ec","gw"]},
+  {t:"Fossil fuel transition and COP31", k:["santa","chn","ecco","et"]},
+  {t:"Finance, adaptation and cities", k:["road","cpi","asset","unfccc29","ld","undp","habitat","champ","paris"]}
+];
+
+/* ================= DATA ================= */
+const THEMES = ["Energy & emissions","Transport & cities","Adaptation & resilience","Nature & land","Just transition","Finance & governance"];
+
+const PRIORITIES = [
+ {name:"Transition away from fossil fuels", theme:"Energy & emissions", level:"Critical",
+  standing:"COP28 called for a transition away from fossil fuels in energy systems, but the COP30 decision carried no roadmap even though more than 80 countries backed one. Colombia and the Netherlands convened the first dedicated conference in Santa Marta in April 2026, and the COP30 presidency's informal roadmap is expected at COP31.",
+  bench:"Coal power: UK already phased out, Canada targets 2030, Australia 2040. EU says no new coal.",
+  solutions:["Coal phase-out schedules","Fossil subsidy reform","Renewables and grids","Electrification"],
+  regions:["Global","Europe","North America","Oceania","Latin America & Caribbean"], countries:["Australia","Canada","Colombia","Netherlands","United Kingdom"], src:["gw","iisd","santa","wriNdc"]},
+ {name:"Cut global emissions about 55% by 2035", theme:"Energy & emissions", level:"Critical",
+  standing:"Emissions reached 57.7 GtCO2e in 2024, up 2.3%. Full delivery of all NDCs would cut 2035 emissions by only 12–15% below 2019, and countries are not on track to meet even their 2030 targets.",
+  bench:"A 1.5°C pathway needs about 55% below 2019 by 2035; a 2°C pathway needs about 35%.",
+  solutions:["Faster NDC delivery","Economy-wide targets covering all gases","Sector targets for oil, gas and industry"],
+  regions:["Global"], countries:[], src:["unep","cbUnep"]},
+ {name:"Triple renewables and double efficiency by 2030", theme:"Energy & emissions", level:"High",
+  standing:"The COP28 pledge was renewed by the EU at COP30. Wind and solar are booming and getting cheaper, but only a few G20 NDCs carry firm renewable targets.",
+  bench:"EU: 42.5% renewables by 2030. China: wind and solar at six times 2020 levels by 2035. South Africa: 44 GW new renewables by 2035. Australia: 82% renewables by 2030.",
+  solutions:["Solar and wind","Storage and grids","Efficiency standards"],
+  regions:["Global","Europe","Asia","Africa","Oceania"], countries:["Australia","China","European Union (27 member states)","South Africa","United Kingdom"], src:["wriNdc","ec","unep"]},
+ {name:"Triple adaptation finance by 2035", theme:"Adaptation & resilience", level:"Critical",
+  standing:"COP30 called for at least tripling adaptation finance by 2035, but set no baseline year and pushed the date five years later than an earlier draft. Tracked adaptation investment has plateaued at about $64 billion (2024).",
+  bench:"Developing-country adaptation needs were estimated at $215–387 billion a year to 2030.",
+  solutions:["Early warning systems","Climate-resilient agriculture","Water and drought resilience","Resilient infrastructure"],
+  regions:["Global","Africa","Asia","Latin America & Caribbean","North America"], countries:["Canada","Ecuador"], src:["cbCop30","gw","cpi","asset"]},
+ {name:"Measure adaptation progress", theme:"Adaptation & resilience", level:"Rising",
+  standing:"COP30 adopted about 60 indicators under the Global Goal on Adaptation to track whether communities are becoming safer. In the new NDCs, 61 of 108 countries strengthened their adaptation commitments.",
+  bench:"Adaptation priorities span food and water systems, public health and nature-based solutions.",
+  solutions:["National adaptation plans","Vulnerability assessments","Adaptation indicators"],
+  regions:["Global"], countries:[], src:["ec","wriNdc"]},
+ {name:"End deforestation and restore ecosystems", theme:"Nature & land", level:"High",
+  standing:"The 2030 deforestation pledge has no adopted COP roadmap; the Brazilian presidency says it will work on one outside the formal talks. National plans carry the restoration targets.",
+  bench:"Indonesia: restore 2 million ha of peatland and rehabilitate 8.3 million ha of degraded land by 2030. Canada and the US: protect 30% of land and waters by 2030.",
+  solutions:["Forest protection","Peatland restoration","Land restoration","Indigenous land rights"],
+  regions:["Global","Latin America & Caribbean","Asia","North America"], countries:["Brazil","Canada","Indonesia","United States"], src:["cbLand","wriNdc","wriCop30"]},
+ {name:"Deliver a just transition", theme:"Just transition", level:"Rising",
+  standing:"COP30 created the Belém Mechanism for a Just Global Transition and backed a Just Transition Action Plan. Ninety-two NDCs analysed by WRI mention the concept, and more now describe concrete measures.",
+  bench:"Brazil and Indonesia reference decent work; Colombia gives just transition a full section of its NDC.",
+  solutions:["Worker retraining","Community transition plans","Social protection"],
+  regions:["Global","Africa","Asia","Latin America & Caribbean"], countries:["Brazil","Colombia","Indonesia","South Africa"], src:["cop30","ec","wriNdc"]},
+ {name:"Respond to loss and damage", theme:"Just transition", level:"High",
+  standing:"The Fund for Responding to Loss and Damage is operational, but initial pledges are in the hundreds of millions of dollars, small against the scale of climate impacts already occurring. Pacific island states are seeking support for a new regional fund ahead of COP31.",
+  bench:"Support covers unavoidable impacts such as floods, sea-level rise and slow-onset events.",
+  solutions:["Loss and damage fund payouts","Sovereign risk insurance","Post-disaster reconstruction"],
+  regions:["Global","Oceania","Asia","Africa"], countries:["Philippines"], src:["ld","cbCop30"]},
+ {name:"Scale climate finance to $1.3 trillion a year", theme:"Finance & governance", level:"High",
+  standing:"The COP29 goal is $300 billion a year in public finance by 2035 within a wider $1.3 trillion target. The Baku to Belém Roadmap sets five action areas, and a global monitoring framework is being developed in 2026.",
+  bench:"Roadmap action areas: replenish, rebalance, redirect, revamp, reshape.",
+  solutions:["Concessional finance","Debt swaps","Blended finance","Lower cost of capital"],
+  regions:["Global"], countries:["Azerbaijan","Brazil"], src:["road","unfccc29","cpi"]},
+ {name:"Decarbonise transport", theme:"Transport & cities", level:"High",
+  standing:"Only three G20 members set zero-emission vehicle targets in their NDCs, even as household demand for electric vehicles grows.",
+  bench:"EU: all new cars, vans and urban buses zero-emission by 2035. UK: 80% of new cars by 2030, 100% by 2035. Canada: 100% of sales by 2035. China: electric vehicles mainstream by 2035.",
+  solutions:["Electric vehicles","Charging networks","Public transit"],
+  regions:["Global","Europe","North America","Asia"], countries:["Canada","China","European Union (27 member states)","United Kingdom"], src:["wriNdc","catChina"]},
+ {name:"Empower cities and local governments", theme:"Transport & cities", level:"Rising",
+  standing:"Strong urban content in national plans has nearly doubled since the last cycle. Seventy-seven countries and the EU pledged through CHAMP to bring subnational priorities into their NDCs, and Türkiye's COP31 agenda includes city resilience and efficiency.",
+  bench:"Brazil's NDC introduces 'climate federalism'; Colombia recognises subnational governments' role.",
+  solutions:["Urban resilience planning","Building efficiency","Local climate plans"],
+  regions:["Global","Latin America & Caribbean","Europe"], countries:["Brazil","Colombia","Türkiye"], src:["wriNdc","habitat","champ","ecco"]},
+ {name:"Cut methane and other non-CO2 gases", theme:"Energy & emissions", level:"Rising",
+  standing:"Non-CO2 gases and black carbon account for almost half of current warming. China's new NDC covers all greenhouse gases for the first time, and Türkiye's COP31 agenda targets methane and waste.",
+  bench:"Canada: cut methane over 35% by 2030, including 75% from oil and gas against 2012.",
+  solutions:["Oil and gas leak repair","Landfill methane capture","Agricultural methane cuts"],
+  regions:["Global","North America","Asia","Europe"], countries:["Canada","China","Türkiye"], src:["bmj","wriNdc","ecco"]},
+ {name:"Close the industry, land and waste gap", theme:"Energy & emissions", level:"High",
+  standing:"Nearly 95% of mitigation finance goes to energy, transport and buildings. Industry, land use and waste, where abatement potential is high, receive small and volatile shares.",
+  bench:"Barriers: uncertain business models, technology risk and weaker policy in these sectors.",
+  solutions:["Green steel and cement","Hydrogen","Circular economy","Waste management"],
+  regions:["Global","Europe"], countries:["European Union (27 member states)"], src:["cpi"]},
+ {name:"Manage overshoot and carbon removal", theme:"Energy & emissions", level:"Rising",
+  standing:"UNEP says exceeding 1.5°C is now very likely within the next decade. Reversing each 0.1°C of overshoot would require permanently removing about five years of current CO2 emissions.",
+  bench:"UNEP's rapid-action scenario limits overshoot to about 0.3°C and returns to 1.5°C by 2100.",
+  solutions:["Faster emissions cuts","Carbon dioxide removal research","Ecosystem restoration"],
+  regions:["Global"], countries:[], src:["unepPR","unep"]},
+ {name:"Track and report progress", theme:"Finance & governance", level:"Rising",
+  standing:"G20 members submitted climate progress reports for the first time in 2026, and a global monitoring framework for climate finance is under development to show where delivery is stalling.",
+  bench:"Better data on finance and delivery is a stated 2026 priority of the Baku to Belém Roadmap.",
+  solutions:["Transparency reporting","Finance tracking","Independent trackers"],
+  regions:["Global"], countries:[], src:["wriBtr","road"]}
+];
+
+const COUNTRIES = [
+ {name:"Australia", region:"Oceania", themes:["Energy & emissions","Nature & land","Transport & cities"], target:"62–70% below 2005", nz:"2050", delivery:"ontrack",
+  points:["82% renewable electricity by 2030","End coal power by 2040","Strategy for Nature 2024–2030","New vehicle efficiency standard from 2025"], note:"Leads formal negotiations at COP31.", src:["wriNdc","nci"]},
+ {name:"Brazil", region:"Latin America & Caribbean", themes:["Nature & land","Just transition","Transport & cities"], target:"59–67% below 2005", nz:"2050", delivery:"offtrack",
+  points:["Suppress illegal deforestation and scale restoration","Sustainable fuels and electrification","'Climate federalism' across levels of government","Decent work in the transition"], note:"COP30 host. No quantified clean energy target.", src:["wriNdc","nci"]},
+ {name:"Canada", region:"North America", themes:["Energy & emissions","Transport & cities","Adaptation & resilience","Nature & land"], target:"45–50% below 2005", nz:"2050", delivery:"offtrack",
+  points:["100% zero-emission vehicle sales by 2035","End coal power by 2030","Methane cut over 35% by 2030","National Adaptation Strategy; 30% protected by 2030"], note:"Only a marginal increase over its 2030 target.", src:["wriNdc","nci"]},
+ {name:"China", region:"Asia", themes:["Energy & emissions","Transport & cities","Finance & governance"], target:"7–10% below peak", nz:"2060", delivery:"", 
+  points:["Non-fossil fuels above 30% of energy use by 2035","Wind and solar at six times 2020 capacity","Electric vehicles mainstream in new sales","National carbon market extended to all major sectors"], note:"First absolute economy-wide target covering all gases. Emissions projected to have peaked around 2025.", src:["wriNdc","catChina","nci"]},
+ {name:"European Union (27 member states)", label:"European Union", region:"Europe", themes:["Energy & emissions","Transport & cities"], target:"66.25–72.5% below 1990", nz:"2050", delivery:"",
+  points:["At least 42.5% renewables by 2030","All new cars, vans and urban buses zero-emission by 2035","Energy sector largely decarbonised in the 2030s; no new coal"], note:"Council goal of 90% below 1990 by 2040.", src:["wriNdc"]},
+ {name:"Indonesia", region:"Asia", themes:["Nature & land","Just transition","Energy & emissions"], target:"1,258–1,489 MtCO2e in 2035", nz:"2060", delivery:"ontrack",
+  points:["Emissions peak by 2030, then decline","Restore 2 million ha of peatland by 2030","Rehabilitate 8.3 million ha of degraded land","References decent work and quality jobs"], note:"Steeper cuts needed after 2035 to reach net zero.", src:["wriNdc","nci"]},
+ {name:"Japan", region:"Asia", themes:["Energy & emissions"], target:"60% below 2013", nz:"2050", delivery:"offtrack",
+  points:["Straight-line path to net zero","No specific forestry targets in NDC"], note:"Linear approach risks using more of the carbon budget sooner.", src:["wriNdc","nci"]},
+ {name:"Mexico", region:"Latin America & Caribbean", themes:["Energy & emissions"], target:"364–404 MtCO2e (unconditional)", nz:"2050", delivery:"",
+  points:["Conditional range of 332–363 MtCO2e with support"], note:"Headline target announced; formal NDC not yet submitted as of Nov 2025.", src:["wriNdc"]},
+ {name:"Russia", region:"Europe", themes:["Energy & emissions"], target:"65–67% of 1990 levels", nz:"2060", delivery:"ontrack",
+  points:["Positions natural gas as a transitional fuel","Broad conservation pledges without quantified targets"], note:"", src:["wriNdc","nci"]},
+ {name:"South Africa", region:"Africa", themes:["Energy & emissions","Just transition"], target:"320–380 MtCO2e in 2035", nz:"2050", delivery:"",
+  points:["44 GW of new renewable capacity by 2035","Partner in a Just Energy Transition Partnership"], note:"No forestry targets in the NDC.", src:["wriNdc"]},
+ {name:"South Korea", region:"Asia", themes:["Energy & emissions"], target:"53–61% below 2018", nz:"2050", delivery:"offtrack",
+  points:["Top-line 2035 target announced ahead of formal submission"], note:"", src:["wriNdc","nci"]},
+ {name:"Türkiye", region:"Europe", themes:["Energy & emissions","Transport & cities","Finance & governance"], target:"643 MtCO2e in 2035", nz:"2053", delivery:"ontrack",
+  points:["COP31 agenda: electricity at 35% of final energy by 2035","Cut methane and waste; build city resilience","Accelerate circularity in industry","Climate Implementation Bridge for developing countries"], note:"COP31 host, in Antalya.", src:["wriNdc","ecco","nci"]},
+ {name:"United Kingdom", region:"Europe", themes:["Energy & emissions","Transport & cities","Just transition"], target:"81% below 1990", nz:"2050", delivery:"offtrack",
+  points:["At least 95% clean electricity by 2030","Coal power already phased out","80% of new cars zero-emission by 2030; 100% by 2035","Dedicated just transition section"], note:"Most ambitious 2035 target among major emitters analysed by WRI.", src:["wriNdc","nci"]},
+ {name:"United States", region:"North America", themes:["Energy & emissions","Nature & land"], target:"61–66% below 2005", nz:"2050", delivery:"offtrack",
+  points:["30% of land and waters protected by 2030","State, city and local action continues"], note:"Withdrawal from the Paris Agreement took effect in January 2026 and many federal climate policies have been reversed. The NDC remains listed with the UN.", src:["wriNdc","unep","nci"]},
+ {name:"Colombia", region:"Latin America & Caribbean", themes:["Just transition","Transport & cities","Energy & emissions"], target:"2035 target announced at COP30", nz:"", delivery:"offtrack",
+  points:["Dedicated just transition section","Recognises subnational governments in delivery","Co-hosted the Santa Marta fossil fuel transition conference"], note:"", src:["wriNdc","nci","santa"]},
+ {name:"Ethiopia", region:"Africa", themes:["Energy & emissions"], target:"2030 target strengthened", nz:"", delivery:"ontrack",
+  points:["One of 15 countries to strengthen its 2030 pledge"], note:"", src:["wriNdc","nci"]},
+ {name:"Ecuador", region:"Latin America & Caribbean", themes:["Adaptation & resilience","Nature & land"], target:"Adaptation-led plan", nz:"", delivery:"",
+  points:["Resilience of water resources, health and settlements","Protects natural heritage","Reported finance needs for the first time in 2025"], note:"", src:["wriNdc"]},
+ {name:"Pakistan", region:"Asia", themes:["Finance & governance","Adaptation & resilience"], target:"$565B finance need", nz:"", delivery:"",
+  points:["Reported finance needs rose from $241B to $565B"], note:"Highlights how much delivery depends on international support.", src:["wriNdc"]},
+ {name:"Angola", region:"Africa", themes:["Finance & governance"], target:"$412B finance need", nz:"", delivery:"",
+  points:["Reported finance needs rose from $44B to $412B","About 89% conditional on international support"], note:"", src:["wriNdc"]},
+ {name:"Montenegro", region:"Europe", themes:["Energy & emissions"], target:"60% below 1990", nz:"", delivery:"",
+  points:["Raised 2030 target from 35% to 55%","Set 60% target for 2035"], note:"Example of a smaller country strengthening its 2030 pledge.", src:["wriNdc"]}
+];
+
+const SOLUTIONS = [
+ {name:"Solar and wind power", theme:"Energy & emissions", status:"Scaling", regions:["Global","Asia"], countries:["China"],
+  text:"Deployment is booming and costs keep falling. China aims for six times its 2020 wind and solar capacity by 2035.", src:["unep","wriNdc"]},
+ {name:"Batteries and grid storage", theme:"Energy & emissions", status:"Scaling", regions:["Asia","Global"], countries:["China"],
+  text:"Renewables, batteries and electric vehicles now contribute roughly a quarter of China's economic growth.", src:["wriNdc"]},
+ {name:"Electric vehicles", theme:"Transport & cities", status:"Scaling", regions:["Europe","North America","Asia","Global"], countries:["Canada","China","European Union (27 member states)","United Kingdom"],
+  text:"Household demand is strong and the EU, UK, Canada and China have 2030s zero-emission targets, though only three G20 members put them in their NDCs.", src:["wriNdc","cpi"]},
+ {name:"Heat pumps, efficient appliances and small-scale solar", theme:"Energy & emissions", status:"Scaling", regions:["Global"], countries:[],
+  text:"Households invested about $332 billion in 2024 in electric vehicles, efficient appliances, heat pumps and small-scale renewables.", src:["cpi"]},
+ {name:"Electrifying end uses", theme:"Energy & emissions", status:"Emerging", regions:["Europe","Global"], countries:["Türkiye"],
+  text:"Türkiye's COP31 agenda aims for electricity to supply 35% of final energy consumption by 2035.", src:["ecco"]},
+ {name:"Carbon pricing and emissions trading", theme:"Finance & governance", status:"Emerging", regions:["Asia","Europe","Global"], countries:["China","European Union (27 member states)"],
+  text:"China plans to extend its national carbon market to all major high-emitting sectors by 2035.", src:["catChina"]},
+ {name:"Industrial decarbonisation", theme:"Energy & emissions", status:"Emerging", regions:["Global","Europe"], countries:["European Union (27 member states)"],
+  text:"Hydrogen, carbon capture and green materials are at demonstration stage, and industry still receives a small, volatile share of mitigation finance.", src:["cpi"]},
+ {name:"Methane abatement", theme:"Energy & emissions", status:"Emerging", regions:["North America","Global"], countries:["Canada"],
+  text:"Canada targets a 75% cut in oil and gas methane against 2012, and Türkiye's COP31 agenda adds methane and waste.", src:["wriNdc","ecco"]},
+ {name:"Carbon dioxide removal", theme:"Energy & emissions", status:"Emerging", regions:["Global"], countries:[],
+  text:"UNEP calls removal methods uncertain, risky and costly, and says cutting emissions faster reduces the need for them.", src:["unepPR"]},
+ {name:"Climate-resilient agriculture and water", theme:"Adaptation & resilience", status:"Emerging", regions:["Global"], countries:[],
+  text:"UNDP reports that de-risking approaches can attract private investment into climate-resilient agriculture.", src:["undp"]},
+ {name:"Just transition programmes", theme:"Just transition", status:"Emerging", regions:["Africa","Asia","Global"], countries:["Indonesia","Senegal","South Africa","Vietnam"],
+  text:"Country partnerships in South Africa, Indonesia, Vietnam and Senegal pair coal and fossil retirement with worker protection, and COP30 added a global mechanism.", src:["cop30","ec"]},
+ {name:"Urban and local climate plans", theme:"Transport & cities", status:"Emerging", regions:["Global","Latin America & Caribbean"], countries:["Brazil","Colombia"],
+  text:"Strong urban content in NDCs has nearly doubled since the last round, according to UN-Habitat.", src:["habitat","wriNdc"]},
+ {name:"Nature-based solutions and forest restoration", theme:"Nature & land", status:"Lagging", regions:["Global","Asia","Latin America & Caribbean"], countries:["Brazil","Indonesia"],
+  text:"Land use and forests receive small, volatile finance shares despite high potential. Indonesia targets 2 million ha of peatland restoration by 2030.", src:["cpi","wriNdc"]},
+ {name:"Early warning and resilient infrastructure", theme:"Adaptation & resilience", status:"Lagging", regions:["Global"], countries:[],
+  text:"Tracked adaptation investment has flattened at about $64 billion a year and is concentrated in a narrow set of sectors.", src:["cpi"]},
+ {name:"Waste management and circular economy", theme:"Energy & emissions", status:"Lagging", regions:["Global","Europe"], countries:["Türkiye"],
+  text:"Waste receives a small, volatile share of mitigation finance, though Türkiye's COP31 agenda now targets circularity in industry.", src:["cpi","ecco"]}
+];
+
+const MILESTONES = [
+ {date:"2015", sub:"December", name:"Paris Agreement adopted", status:"done", theme:"Finance & governance", regions:["Global"], countries:[],
+  text:"Countries agree to hold warming well below 2°C and pursue 1.5°C, with national plans (NDCs) renewed every five years.", src:["paris"]},
+ {date:"2023", sub:"COP28, Dubai", name:"Transition away from fossil fuels, triple renewables", status:"done", theme:"Energy & emissions", regions:["Global","Asia"], countries:["United Arab Emirates"],
+  text:"The first global stocktake calls for a transition away from fossil fuels in energy systems, tripling renewable capacity and doubling energy efficiency by 2030.", src:["ec","wriNdc"]},
+ {date:"2024", sub:"COP29, Baku", name:"New collective climate finance goal", status:"done", theme:"Finance & governance", regions:["Global","Europe"], countries:["Azerbaijan"],
+  text:"Developed countries commit to $300 billion a year in public finance by 2035, within a wider goal of $1.3 trillion from all sources.", src:["unfccc29","asset"]},
+ {date:"2025", sub:"By 9 November", name:"New NDCs for 2035 submitted", status:"done", theme:"Energy & emissions", regions:["Global"], countries:[],
+  text:"108 countries covering 71% of global emissions had submitted new NDCs. Only 15 strengthened their 2030 pledges, and none of the wealthier, high-emitting countries did.", src:["wriNdc","cw"]},
+ {date:"2025", sub:"November", name:"Baku to Belém Roadmap to $1.3 trillion", status:"done", theme:"Finance & governance", regions:["Global","Latin America & Caribbean","Europe"], countries:["Azerbaijan","Brazil"],
+  text:"The COP29 and COP30 presidencies publish a five-part plan (the 5Rs) to align existing institutions behind the $1.3 trillion goal.", src:["road"]},
+ {date:"2025", sub:"COP30, Belém", name:"Mutirão decision: adaptation, just transition, no fossil roadmap", status:"done", theme:"Adaptation & resilience", regions:["Global","Latin America & Caribbean"], countries:["Brazil"],
+  text:"Countries call for tripling adaptation finance by 2035, adopt about 60 adaptation indicators and create a just transition mechanism. Fossil fuel and deforestation roadmaps were left out of the formal text.", src:["cbCop30","iisd","cop30","gw"]},
+ {date:"2025", sub:"November", name:"UNEP Emissions Gap Report", status:"done", theme:"Energy & emissions", regions:["Global"], countries:[],
+  text:"Warming projections fall to 2.3–2.5°C if all NDCs are delivered and 2.8°C under current policies, but UNEP says the new NDCs have barely moved the needle.", src:["unep","unepPR"]},
+ {date:"2026", sub:"January", name:"US withdrawal from the Paris Agreement takes effect", status:"done", theme:"Finance & governance", regions:["North America"], countries:["United States"],
+  text:"The withdrawal is expected to add roughly 0.1°C to projected warming, according to UNEP.", src:["unep","wriNdc"]},
+ {date:"2026", sub:"24–29 April", name:"First conference on transitioning away from fossil fuels", status:"done", theme:"Energy & emissions", regions:["Latin America & Caribbean","Europe","Global"], countries:["Colombia","Netherlands"],
+  text:"Co-hosted by Colombia and the Netherlands in Santa Marta. Participating countries discussed roadmaps, subsidies, debt and trade outside the formal UN consensus process.", src:["santa","et","chn"]},
+ {date:"2026", sub:"June", name:"Türkiye launches its COP31 Action Agenda", status:"done", theme:"Transport & cities", regions:["Europe"], countries:["Türkiye"],
+  text:"Six priorities: 35% electrification by 2035, methane and waste, city resilience, circular industry, climate education and a Climate Implementation Bridge.", src:["ecco"]},
+ {date:"2026", sub:"9–20 November", name:"COP31, Antalya", status:"upcoming", theme:"Energy & emissions", regions:["Europe","Oceania","Global"], countries:["Türkiye","Australia"],
+  text:"Türkiye hosts while Australia leads formal negotiations, with a focus on the Pacific. The COP30 presidency's informal fossil fuel roadmap is expected to be delivered.", src:["santa","chn","ecco"]}
+];
+
+/* ================= HERO SCALE ================= */
+(function(){
+  const track = document.getElementById('warm-track');
+  const lo = 1.0, hi = 3.2, pos = v => ((v-lo)/(hi-lo))*100;
+  const band = document.createElement('div'); band.className='warm-band';
+  band.style.left = pos(2.3)+'%'; band.style.width = (pos(2.5)-pos(2.3))+'%'; track.appendChild(band);
+  const marks = [
+    {v:1.5, big:'1.5°C', txt:'Paris ambition', side:'above', dot:true},
+    {v:2.0, big:'2°C', txt:'Paris limit', side:'below', dot:true},
+    {v:2.4, big:'2.3–2.5°C', txt:'If all NDCs are delivered', side:'above', dot:false},
+    {v:2.8, big:'2.8°C', txt:'Current policies', side:'below', dot:true}
+  ];
+  marks.forEach(m=>{
+    if(m.dot){ const d=document.createElement('div'); d.className='warm-dot'; d.style.left=pos(m.v)+'%'; track.appendChild(d); }
+    const l=document.createElement('div'); l.className='warm-label '+m.side; l.style.left=pos(m.v)+'%';
+    l.innerHTML='<b>'+m.big+'</b>'+m.txt; track.appendChild(l);
+  });
+})();
+
+/* ================= FILTER STATE ================= */
+const $ = id => document.getElementById(id);
+const regionSel=$('f-region'), countrySel=$('f-country'), themeSel=$('f-theme'), levelSel=$('f-level'), searchIn=$('f-search');
+let activeTab='priorities';
+
+const LEVELS = {
+  priorities:{label:'Urgency', opts:['Critical','High','Rising']},
+  countries:{label:'2030 delivery', opts:[['ontrack','Likely on track'],['offtrack','Off track'],['none','Not assessed']]},
+  solutions:{label:'Scale status', opts:['Scaling','Emerging','Lagging']},
+  milestones:{label:'Timing', opts:[['done','Completed'],['upcoming','Upcoming']]}
+};
+
+const uniq = a => [...new Set(a)].sort((x,y)=>x.localeCompare(y));
+function fill(sel, vals){ vals.forEach(v=>{ const o=document.createElement('option'); if(Array.isArray(v)){o.value=v[0];o.textContent=v[1];} else {o.value=v;o.textContent=v;} sel.appendChild(o); }); }
+
+COUNTRIES.forEach(c=>{ c.regions=[c.region]; c.countriesList=[c.name]; });
+const geoItems = () => [
+  ...PRIORITIES.map(x=>({regions:x.regions, countries:x.countries})),
+  ...COUNTRIES.map(x=>({regions:x.regions, countries:x.countriesList})),
+  ...SOLUTIONS.map(x=>({regions:x.regions, countries:x.countries})),
+  ...MILESTONES.map(x=>({regions:x.regions, countries:x.countries}))
+];
+fill(regionSel, uniq(geoItems().flatMap(x=>x.regions)));
+fill(themeSel, THEMES);
+
+function refreshCountries(){
+  const r=regionSel.value;
+  const names = uniq(geoItems().filter(x=>!r||x.regions.includes(r)).flatMap(x=>x.countries));
+  const prev=countrySel.value;
+  countrySel.innerHTML='<option value="">'+(r?'All countries in '+r:'All countries')+'</option>';
+  fill(countrySel,names);
+  countrySel.value = names.includes(prev)?prev:'';
+}
+function setLevel(){
+  const cfg=LEVELS[activeTab];
+  const group=$('level-group');
+  if(!cfg){ group.style.display='none'; return; }
+  group.style.display='';
+  $('level-label').textContent=cfg.label;
+  levelSel.innerHTML='<option value="">Any</option>';
+  fill(levelSel,cfg.opts);
+  levelSel.value='';
+}
+function geoOK(regions,countries){
+  const r=regionSel.value,c=countrySel.value;
+  if(r && !regions.includes(r)) return false;
+  if(c && !countries.includes(c)) return false;
+  return true;
+}
+function link(k){ const s=SRC[k]; return '<a href="'+s.u+'" target="_blank" rel="noopener">'+s.n+'</a>'; }
+function srcsHTML(keys){ return '<div class="srcs">Sources: '+keys.map(link).join('')+'</div>'; }
+function tagsHTML(list,cls){ if(!list||!list.length) return ''; return '<div class="tags">'+list.map(t=>'<span class="tag '+(cls||'')+(t===countrySel.value?' hit':'')+'">'+t+'</span>').join('')+'</div>'; }
+const q = () => searchIn.value.trim().toLowerCase();
+
+/* ================= RENDERS ================= */
+function count(n,total,noun){ $('count').innerHTML='<strong>'+n+'</strong> of '+total+' '+noun; }
+
+function renderPriorities(){
+  const box=$('priorities-list'); box.innerHTML='';
+  const th=themeSel.value, lv=levelSel.value, s=q();
+  const list=PRIORITIES.filter(p=>{
+    if(!geoOK(p.regions,p.countries)) return false;
+    if(th && p.theme!==th) return false;
+    if(activeTab==='priorities' && lv && p.level!==lv) return false;
+    if(s && !(p.name+' '+p.standing+' '+p.bench+' '+p.solutions.join(' ')+' '+p.countries.join(' ')).toLowerCase().includes(s)) return false;
+    return true;
+  });
+  $('priorities-empty').hidden = list.length>0;
+  if(activeTab==='priorities') count(list.length,PRIORITIES.length,'priorities');
+  list.forEach(p=>{
+    const el=document.createElement('article'); el.className='prow '+p.level;
+    el.innerHTML='<div class="bar"></div><div class="body">'+
+      '<div class="head"><h3>'+p.name+'</h3><span class="pill '+p.level+'">'+p.level+'</span><span class="pill theme">'+p.theme+'</span></div>'+
+      '<p class="standing">'+p.standing+'</p>'+
+      '<div class="side"><p><b>Benchmark.</b> '+p.bench+'</p><p><b>Solutions</b></p>'+tagsHTML(p.solutions,'sol')+
+        (p.countries.length?'<p style="margin-top:10px"><b>Countries</b></p>'+tagsHTML(p.countries):'')+'</div>'+
+      srcsHTML(p.src)+'</div>';
+    box.appendChild(el);
+  });
+}
+
+const DELIV = {ontrack:'Likely on track for 2030', offtrack:'Off track for 2030'};
+function renderCountries(){
+  const box=$('countries-grid'); box.innerHTML='';
+  const th=themeSel.value, lv=levelSel.value, s=q();
+  const list=COUNTRIES.filter(c=>{
+    if(!geoOK(c.regions,c.countriesList)) return false;
+    if(th && !c.themes.includes(th)) return false;
+    if(activeTab==='countries' && lv){ const d=c.delivery||'none'; if(d!==lv) return false; }
+    if(s && !(c.name+' '+c.points.join(' ')+' '+c.note+' '+c.region).toLowerCase().includes(s)) return false;
+    return true;
+  });
+  $('countries-empty').hidden=list.length>0;
+  if(activeTab==='countries') count(list.length,COUNTRIES.length,'countries');
+  list.forEach(c=>{
+    const el=document.createElement('article'); el.className='ccard';
+    el.innerHTML='<div class="top"><div><h3>'+(c.label||c.name)+'</h3><div class="reg">'+c.region+'</div></div>'+
+      (c.delivery?'<span class="pill '+c.delivery+'">'+DELIV[c.delivery]+'</span>':'')+'</div>'+
+      '<div class="targets"><div><div class="v">'+c.target+'</div><div class="k">2035 target or headline figure</div></div>'+
+      '<div><div class="v">'+(c.nz||'Not stated')+'</div><div class="k">Net-zero year</div></div></div>'+
+      '<ul>'+c.points.map(p=>'<li>'+p+'</li>').join('')+'</ul>'+
+      (c.note?'<p class="note">'+c.note+'</p>':'')+srcsHTML(c.src);
+    box.appendChild(el);
+  });
+}
+
+const STATUS_SUB = {Scaling:'Proven and growing quickly', Emerging:'Working at demonstration or early scale', Lagging:'Behind their potential and underfunded'};
+function renderSolutions(){
+  const box=$('solutions-board'); box.innerHTML='';
+  const th=themeSel.value, lv=levelSel.value, s=q();
+  const list=SOLUTIONS.filter(x=>{
+    if(!geoOK(x.regions,x.countries)) return false;
+    if(th && x.theme!==th) return false;
+    if(activeTab==='solutions' && lv && x.status!==lv) return false;
+    if(s && !(x.name+' '+x.text+' '+x.countries.join(' ')).toLowerCase().includes(s)) return false;
+    return true;
+  });
+  if(activeTab==='solutions') count(list.length,SOLUTIONS.length,'solutions');
+  ['Scaling','Emerging','Lagging'].forEach(st=>{
+    const items=list.filter(x=>x.status===st);
+    const col=document.createElement('div'); col.className='col '+st;
+    col.innerHTML='<h3>'+st+' ('+items.length+')</h3><p class="sub">'+STATUS_SUB[st]+'</p>';
+    if(!items.length){ col.innerHTML+='<p class="none">Nothing here matches the current filters.</p>'; }
+    items.forEach(x=>{
+      const c=document.createElement('div'); c.className='scard';
+      c.innerHTML='<h4>'+x.name+'</h4><p>'+x.text+'</p>'+tagsHTML(x.countries)+srcsHTML(x.src);
+      col.appendChild(c);
+    });
+    box.appendChild(col);
+  });
+}
+
+function renderMilestones(){
+  const box=$('milestones-list'); box.innerHTML='';
+  const th=themeSel.value, lv=levelSel.value, s=q();
+  const list=MILESTONES.filter(m=>{
+    if(!geoOK(m.regions,m.countries)) return false;
+    if(th && m.theme!==th) return false;
+    if(activeTab==='milestones' && lv && m.status!==lv) return false;
+    if(s && !(m.name+' '+m.text+' '+m.countries.join(' ')).toLowerCase().includes(s)) return false;
+    return true;
+  });
+  $('milestones-empty').hidden=list.length>0;
+  if(activeTab==='milestones') count(list.length,MILESTONES.length,'milestones');
+  list.forEach(m=>{
+    const li=document.createElement('li'); li.className='mrow '+m.status;
+    li.innerHTML='<div class="date">'+m.date+'<span>'+m.sub+'</span></div><div>'+
+      '<div class="head"><h3>'+m.name+'</h3><span class="pill '+m.status+'">'+(m.status==='done'?'Completed':'Upcoming')+'</span></div>'+
+      '<p>'+m.text+'</p>'+tagsHTML(m.countries)+srcsHTML(m.src)+'</div>';
+    box.appendChild(li);
+  });
+}
+
+function renderSources(){
+  const box=$('sources-groups');
+  SRC_GROUPS.forEach(g=>{
+    const d=document.createElement('div'); d.className='sgroup';
+    d.innerHTML='<h3>'+g.t+'</h3>'+g.k.map(k=>{const s=SRC[k]; return '<div class="sitem"><b>'+s.n+'</b><span>'+s.d+'</span><a href="'+s.u+'" target="_blank" rel="noopener">'+s.u.replace('https://','')+'</a></div>';}).join('');
+    box.appendChild(d);
+  });
+}
+
+function renderAll(){ renderPriorities(); renderCountries(); renderSolutions(); renderMilestones(); }
+
+/* ================= EVENTS ================= */
+regionSel.addEventListener('change',()=>{refreshCountries(); renderAll();});
+[countrySel,themeSel,levelSel].forEach(e=>e.addEventListener('change',renderAll));
+searchIn.addEventListener('input',renderAll);
+$('clear').addEventListener('click',()=>{ regionSel.value=''; themeSel.value=''; levelSel.value=''; searchIn.value=''; refreshCountries(); renderAll(); });
+
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected','false'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  t.setAttribute('aria-selected','true');
+  activeTab=t.dataset.tab;
+  $('panel-'+activeTab).classList.add('active');
+  const isSrc = activeTab==='sources';
+  document.querySelector('.filterbar').style.display = isSrc?'none':'';
+  setLevel(); renderAll();
+}));
+
+refreshCountries(); setLevel(); renderSources(); renderAll();
+</script>
+</body>
+</html>
